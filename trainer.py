@@ -139,6 +139,15 @@ def main():
 
         # train for one epoch
         print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
+
+        if epoch == 0:
+            # at epoch 0 checkpoint initial model state
+            save_checkpoint({
+                'epoch': 0,
+                'state_dict': model.state_dict(),
+                'best_prec1': best_prec1,
+            }, False, filename=os.path.join(args.save_dir, 'model_init.th'))
+
         train(train_loader, model, criterion, optimizer, epoch)
         lr_scheduler.step()
 
