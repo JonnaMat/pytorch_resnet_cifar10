@@ -265,17 +265,17 @@ def main():
                 filename=os.path.join(args.save_dir, "checkpoint.th"),
             )
 
-        if is_best:
+        # if is_best:
             # checkpoint the best model
-            save_checkpoint(
-                {
-                    "epoch": epoch + 1,
-                    "state_dict": model.state_dict(),
-                    "prec1": best_prec1,
-                },
-                is_best,
-                filename=os.path.join(args.save_dir, "checkpoint_best.th"),
-            )
+            #save_checkpoint(
+             #   {
+              #      "epoch": epoch + 1,
+             #       "state_dict": model.state_dict(),
+              #      "prec1": best_prec1,
+               # },
+               # is_best,
+               # filename=os.path.join(args.save_dir, "checkpoint_best.th"),
+            # )
 
     # checkpoint the final model
     save_checkpoint(
