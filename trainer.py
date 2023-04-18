@@ -1,8 +1,6 @@
 import argparse
 import os
-import shutil
 import time
-
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -12,6 +10,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import resnet
+from resnet import _weights_init
 
 model_names = sorted(
     name
@@ -125,6 +124,12 @@ parser.add_argument(
     help="list of epoch indices for multi step learning rate scheduler",
     type=int,
 )
+parser.add_argument(
+    "--pruned-model",
+    default="",
+    help="Path to pruned model (using torch.save(model))",
+    type=str
+)
 best_prec1 = 0
 
 
@@ -137,7 +142,15 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    model = torch.nn.DataParallel(resnet.__dict__[args.arch]())
+    if args.pruned_model:
+        # load pruned model
+        model = torch.load(args.pruned_model)
+        # reinitialise weights
+        model.apply(_weights_init)
+    else:
+        model = resnet.__dict__[args.arch]()
+        
+    model = torch.nn.DataParallel(model)
     model.cuda()
 
     # optionally resume from a checkpoint
