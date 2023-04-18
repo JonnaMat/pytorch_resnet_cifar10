@@ -113,7 +113,7 @@ class ResNet(nn.Module):
         out = self.layer2(out)
         out = self.layer3(out)
         out = self.avg(out)
-        out = torch.flatten(out)
+        out = torch.flatten(out, start_dim=1, end_dim=-1)
         out = self.linear(out)
         return out
 
