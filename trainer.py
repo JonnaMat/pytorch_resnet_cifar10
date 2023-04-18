@@ -10,7 +10,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import resnet
-from resnet import _weights_init
+from resnet import _weights_init, test
 
 model_names = sorted(
     name
