@@ -9,28 +9,27 @@ import torch.optim
 import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-import resnet
-from resnet import _weights_init, test
+import models
+from models import _weights_init
 
 model_names = sorted(
     name
-    for name in resnet.__dict__
-    if name.islower()
-    and not name.startswith("__")
-    and name.startswith("resnet")
-    and callable(resnet.__dict__[name])
+    for name in models.__dict__
+    if name.islower() and not name.startswith("__") and callable(models.__dict__[name])
 )
 
 print(model_names)
 
-parser = argparse.ArgumentParser(description="Propert ResNets for CIFAR10 in pytorch")
+parser = argparse.ArgumentParser(
+    description="Propert ResNet and MobileNetV2 for CIFAR10 in pytorch"
+)
 parser.add_argument(
     "--arch",
     "-a",
     metavar="ARCH",
-    default="resnet32",
+    default="models32",
     choices=model_names,
-    help="model architecture: " + " | ".join(model_names) + " (default: resnet32)",
+    help="model architecture: " + " | ".join(model_names) + " (default: models32)",
 )
 parser.add_argument(
     "-j",
@@ -128,7 +127,7 @@ parser.add_argument(
     "--pruned-model",
     default="",
     help="Path to pruned model (using torch.save(model))",
-    type=str
+    type=str,
 )
 best_prec1 = 0
 
@@ -148,8 +147,8 @@ def main():
         # reinitialise weights
         model.apply(_weights_init)
     else:
-        model = resnet.__dict__[args.arch]()
-        
+        model = models.__dict__[args.arch]()
+
     model = torch.nn.DataParallel(model)
     model.cuda()
 
@@ -230,8 +229,8 @@ def main():
         optimizer, milestones=args.lr_milestones, last_epoch=args.start_epoch - 1
     )
 
-    if args.arch in ["resnet1202", "resnet110"]:
-        # for resnet1202 original paper uses lr=0.01 for first 400 minibatches for warm-up
+    if args.arch in ["models1202", "models110"]:
+        # for models1202 original paper uses lr=0.01 for first 400 minibatches for warm-up
         # then switch back. In this setup it will correspond for first epoch.
         for param_group in optimizer.param_groups:
             param_group["lr"] = args.lr * 0.1
@@ -241,7 +240,6 @@ def main():
         return
 
     for epoch in range(args.start_epoch, args.epochs):
-
         if epoch == 0:
             # at epoch 0 checkpoint initial model state
             save_checkpoint(
@@ -279,16 +277,16 @@ def main():
             )
 
         # if is_best:
-            # checkpoint the best model
-            #save_checkpoint(
-             #   {
-              #      "epoch": epoch + 1,
-             #       "state_dict": model.state_dict(),
-              #      "prec1": best_prec1,
-               # },
-               # is_best,
-               # filename=os.path.join(args.save_dir, "checkpoint_best.th"),
-            # )
+        # checkpoint the best model
+        # save_checkpoint(
+        #   {
+        #      "epoch": epoch + 1,
+        #       "state_dict": model.state_dict(),
+        #      "prec1": best_prec1,
+        # },
+        # is_best,
+        # filename=os.path.join(args.save_dir, "checkpoint_best.th"),
+        # )
 
     # checkpoint the final model
     save_checkpoint(
@@ -316,7 +314,6 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     end = time.time()
     for i, (input, target) in enumerate(train_loader):
-
         # measure data loading time
         data_time.update(time.time() - end)
 
