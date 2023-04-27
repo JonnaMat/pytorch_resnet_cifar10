@@ -31,10 +31,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-
+import math
 from torch.autograd import Variable
 
-__all__ = ['ResNet', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110', 'resnet1202', 'mobilenetv2']
+__all__ = ['ResNet', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110', 'resnet1202', 'mobilenet', 'mobilenetv2']
 
 def _weights_init(m):
     classname = m.__class__.__name__
@@ -114,7 +114,49 @@ class ResNet(nn.Module):
         out = torch.flatten(out, start_dim=1, end_dim=-1)
         out = self.linear(out)
         return out
-    
+
+
+class BaseBlock(nn.Module):
+    alpha = 1
+
+    def __init__(self, input_channel, output_channel, t = 6, downsample = False):
+        """
+            t:  expansion factor, t*input_channel is channel of expansion layer
+            alpha:  width multiplier, to get thinner models
+            rho:    resolution multiplier, to get reduced representation
+        """ 
+        super(BaseBlock, self).__init__()
+        self.stride = 2 if downsample else 1
+        self.downsample = downsample
+        self.shortcut = (not downsample) and (input_channel == output_channel) 
+
+        # apply alpha
+        input_channel = int(self.alpha * input_channel)
+        output_channel = int(self.alpha * output_channel)
+        
+        # for main path:
+        c  = t * input_channel
+        # 1x1   point wise conv
+        self.conv1 = nn.Conv2d(input_channel, c, kernel_size = 1, bias = False)
+        self.bn1 = nn.BatchNorm2d(c)
+        # 3x3   depth wise conv
+        self.conv2 = nn.Conv2d(c, c, kernel_size = 3, stride = self.stride, padding = 1, groups = c, bias = False)
+        self.bn2 = nn.BatchNorm2d(c)
+        # 1x1   point wise conv
+        self.conv3 = nn.Conv2d(c, output_channel, kernel_size = 1, bias = False)
+        self.bn3 = nn.BatchNorm2d(output_channel)
+        
+
+    def forward(self, inputs):
+        # main path
+        x = F.relu6(self.bn1(self.conv1(inputs)), inplace = True)
+        x = F.relu6(self.bn2(self.conv2(x)), inplace = True)
+        x = self.bn3(self.conv3(x))
+
+        # shortcut path
+        x = x + inputs if self.shortcut else x
+
+        return x
 
 class MobileNetV2(nn.Module):
     def __init__(self, output_size=10, alpha = 1):
@@ -153,20 +195,6 @@ class MobileNetV2(nn.Module):
         self.fc = nn.Linear(1280, output_size)
 
         self.apply(_weights_init)
-
-        # weights init
-        # self.weights_init()
-
-
-    def weights_init(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
 
 
     def forward(self, inputs):
@@ -215,9 +243,9 @@ def resnet110():
 def resnet1202():
     return ResNet(BasicBlock, [200, 200, 200])
 
+
 def mobilenetv2():
     return MobileNetV2()
-
 
 def test(net):
     import numpy as np
@@ -238,13 +266,4 @@ if __name__ == "__main__":
 
 
 
-
-# encoding: utf-8
-import math
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.nn.init as init
-
-from blocks import BaseBlock
 
