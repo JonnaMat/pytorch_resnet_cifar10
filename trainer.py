@@ -252,7 +252,6 @@ def main():
                 filename=os.path.join(args.save_dir, "model_init.th"),
             )
 
-        epoch_time_start = time.time()
         # train for one epoch
         print("current lr {:.5e}".format(optimizer.param_groups[0]["lr"]))
         train(train_loader, model, criterion, optimizer, epoch)
@@ -260,7 +259,6 @@ def main():
 
         # evaluate on validation set
         prec1 = validate(val_loader, model, criterion)
-        print('train and val time', time.time() - epoch_time_start)
         # remember best prec@1
         is_best = prec1 > best_prec1
         best_prec1 = max(prec1, best_prec1)
