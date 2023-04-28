@@ -69,3 +69,22 @@ _x :    The fraction of FLOPS we reach through uniform pruning.
         )
         print(pruned_flops/base_flops) # 0.598694904487919
         torch.save(model, 'pruned_models/mobilenetv2_uniform_60.th')
+
+## mobilenetv2_uniform_20
+
+        model = mobilenetv2()
+        input_shape = [1,3,32,32]       
+        base_flops = measure_flops(
+        model=model,
+        input_shape=input_shape
+        )
+        pruning_method = UniformPruning(
+        target=Target(Flops(), fraction=0.2),
+        step_size=2
+        )
+        pruning_steps = pruning_method.prune(model, input_shape)
+        pruned_flops = measure_flops(
+        model=model,
+        input_shape=input_shape
+        )
+        print(pruned_flops/base_flops) # 0.1980394686585399
