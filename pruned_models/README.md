@@ -158,7 +158,7 @@ _x :    The fraction of FLOPS we reach through uniform pruning.
         validate(val_loader, torch.nn.DataParallel(model), nn.CrossEntropyLoss().cuda())
 
         pruned_flops = measure_flops(model=model, input_shape=input_shape)
-        print(pruned_flops / base_flops)  # 0.5999573483082262
+        print(pruned_flops / base_flops)  # 0.5999830832084312
 
         plot_pruning_profile(model, pruning_steps)
         torch.save(
