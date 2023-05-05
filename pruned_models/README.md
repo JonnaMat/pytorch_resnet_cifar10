@@ -165,3 +165,39 @@ _x :    The fraction of FLOPS we reach through uniform pruning.
         model,
         "/home/jonna/pytorch_resnet_cifar10/pruned_models/resnet56_magnitude_60.th",
         )
+
+## mobilenetv2_magnitude_60
+
+        state_dict = torch.load(
+        "/home/jonna/hyperparameter_sensitivity_pruning/experiments/cifar10/mobilenetv2/base_model/results_0/lr_10**-1.00_wd_10**-4.00/checkpoint_final.th"
+        )["state_dict"]
+        state_dict = {key[7:]: weights for key, weights in state_dict.items()}
+        model = mobilenetv2()
+        model.load_state_dict(state_dict)
+        model.cuda()
+
+        print("Validate before pruning")
+        validate(val_loader, torch.nn.DataParallel(model), nn.CrossEntropyLoss().cuda())
+
+        input_shape = [1, 3, 32, 32]
+        base_flops = measure_flops(model=model, input_shape=input_shape)
+
+
+        scorer = ChannelPruningScorer(
+        importance_score=WeightMagnitude(), channel_pruning_balancer=None
+        )
+        tactic = ChannelPruningTactic(step_size=1, search_depth=1, speedup_pruning=False)
+
+        pruning_method = PruningMethod(scorer, [tactic], target=Target(Flops(), fraction=0.6))
+        pruning_steps = pruning_method.prune(model, input_shape=input_shape)
+
+        print("\nValidate after pruning")
+        validate(val_loader, torch.nn.DataParallel(model), nn.CrossEntropyLoss().cuda())
+
+        pruned_flops = measure_flops(model=model, input_shape=input_shape)
+        print(pruned_flops / base_flops)  # 0.5999830832084312
+
+        plot_pruning_profile(model, pruning_steps)
+        torch.save(model, 'pruned_models/mobilenetv2_magnitude_60.th')
+        with open('pruned_models/pruningsteps_mobilenetv2_magnitude_60.th', 'wb') as f:
+        pickle.dump(pruning_steps, f)
