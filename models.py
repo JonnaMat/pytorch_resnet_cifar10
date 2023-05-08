@@ -55,7 +55,7 @@ def _weights_init(m):
     elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
         nn.init.ones_(m.weight)
         nn.init.zeros_(m.bias)
-        m.reset_running_stats()  # resets running_mewan (0), running_var (1), and num_batches tracked (0)
+        m.reset_running_stats()  # resets running_mean (0), running_var (1), and num_batches tracked (0)
 
 
 class LambdaLayer(nn.Module):
