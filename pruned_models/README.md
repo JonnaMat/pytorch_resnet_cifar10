@@ -319,3 +319,86 @@ _x :    The fraction of FLOPS we reach through uniform pruning.
 
         with open("pruned_models/pruningsteps_resnet50_magnitude_40.th", "wb") as f:
         pickle.dump(pruning_steps, f)
+
+## resnet50_magnitude_40_2
+        state = torch.load(
+        "/home/jonna/hyperparameter_sensitivity_pruning/experiments/imagenet/base_model/3_3_grid/results/lr_10**-1.00_wd_10**-4.00/checkpoint_middle.pth"
+        )
+        model = resnet50()
+        model.load_state_dict(state["model"])
+        model.cuda()
+
+        input_shape = [1, 3, 224, 224]
+
+        base_flops = measure_flops(model, input_shape=input_shape)
+        print(base_flops)
+
+
+        exclude_ops = [
+                "conv1",
+                "layer1_0_downsample_0",
+                "layer2_0_downsample_0",
+                "layer3_0_downsample_0",
+                "layer4_0_downsample_0",
+                "layer4_2_conv3",
+                "layer4_1_conv3",
+                "layer4_0_conv3",
+                "layer3_5_conv3",
+                "layer3_4_conv3",
+                "layer3_3_conv3",
+                "layer3_2_conv3",
+                "layer3_1_conv3",
+                "layer3_0_conv3",
+                "layer2_3_conv3",
+                "layer2_2_conv3",
+                "layer2_1_conv3",
+                "layer2_0_conv3",
+                "layer1_2_conv3",
+                "layer1_1_conv3",
+                "layer1_0_conv3",
+        ]
+
+        with open("/home/jonna/pytorch_resnet_cifar10/pruned_models/pruningsteps_resnet50_magnitude_40.th", "rb") as f:
+        steps = pickle.load(f)
+
+        pruning_steps = [steps[0]]
+        for step in steps[1:]:
+        if step.group_dict['name'] in exclude_ops:
+                continue
+        pruning_steps.append(step)
+
+
+
+        apply_pruning_steps(model, pruning_steps, input_shape=input_shape)
+
+        pruned_flops = measure_flops(model, input_shape=input_shape)
+        print(pruned_flops)
+        initial_ratio = pruned_flops/base_flops
+        print(initial_ratio)
+
+        
+        scorer = ChannelPruningScorer(
+        importance_score=WeightMagnitude(), channel_pruning_balancer=None
+        )
+
+        tactic = ChannelPruningTactic(step_size=1, search_depth=1, speedup_pruning=False)
+        pruning_method = PruningMethod(
+        scorer,
+        [tactic],
+        target=Target(Flops(), fraction=(0.4 / initial_ratio)),
+        exclude_ops=exclude_ops,
+        )
+        pruning_steps_2 = pruning_method.prune(model, input_shape=input_shape)
+
+        pruned_flops = measure_flops(model=model, input_shape=input_shape)
+        print(pruned_flops / base_flops)  #
+
+        torch.save(model, "pruned_models/resnet50_magnitude_40_2.th")
+
+        with open("pruned_models/pruningsteps_resnet50_magnitude_40_2_part.th", "wb") as f:
+        pickle.dump(pruning_steps_2, f)
+
+        pruning_steps.append(pruning_steps_2[1:])
+
+        with open("pruned_models/pruningsteps_resnet50_magnitude_40_2_all.th", "wb") as f:
+        pickle.dump(pruning_steps, f)
