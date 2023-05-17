@@ -429,7 +429,7 @@ _x :    The fraction of FLOPS we reach through uniform pruning.
         pruning_steps = pruning_method.prune(model, input_shape=input_shape)
 
         pruned_flops = measure_flops(model=model, input_shape=input_shape)
-        print(pruned_flops / base_flops)  #
+        print(pruned_flops / base_flops)  # 0.39987710179444597
 
         torch.save(model, "pruned_models/resnet50_magnitude_40_noexcl.th")
 
