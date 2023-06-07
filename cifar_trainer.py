@@ -50,6 +50,12 @@ parser.add_argument(
     help="manual epoch number (useful on restarts)",
 )
 parser.add_argument(
+    "--lr-scheduler",
+    default='step',
+    choices=['step','cosine'],
+    help="LR scheduler (default: step)",
+)
+parser.add_argument(
     "-b",
     "--batch-size",
     default=128,
@@ -225,9 +231,15 @@ def main():
         weight_decay=args.weight_decay,
     )
 
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=args.lr_milestones, last_epoch=args.start_epoch - 1
-    )
+    if args.lr_scheduler == 'cosine':
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = args.epochs, verbose=True)
+        print("Using Cosine LR scheduler")
+    else:
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=args.lr_milestones, last_epoch=args.start_epoch - 1
+        )
+        print("Using step-wise LR scheduler")
+
 
     if args.arch in ["models1202", "models110"]:
         # for models1202 original paper uses lr=0.01 for first 400 minibatches for warm-up
