@@ -32,6 +32,10 @@ parser.add_argument(
     help="model architecture: " + " | ".join(model_names) + " (default: models32)",
 )
 parser.add_argument(
+    "--data-dir",
+    default="./data",
+)
+parser.add_argument(
     "-j",
     "--workers",
     default=4,
@@ -182,7 +186,7 @@ def main():
 
     train_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(
-            root="./data",
+            root=args.data_dir,
             train=True,
             transform=transforms.Compose(
                 [
@@ -202,7 +206,7 @@ def main():
 
     val_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(
-            root="./data",
+            root=args.data_dir,
             train=False,
             transform=transforms.Compose(
                 [
@@ -232,7 +236,7 @@ def main():
     )
 
     if args.lr_scheduler == 'cosine':
-        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = args.epochs, verbose=True)
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = args.epochs)
         print("Using Cosine LR scheduler")
     else:
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
