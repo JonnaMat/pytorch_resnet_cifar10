@@ -139,6 +139,10 @@ parser.add_argument(
     help="Path to pruned model (using torch.save(model))",
     type=str,
 )
+parser.add_argument(
+    "--no-init-weights",
+    action="store_true"
+)
 best_prec1 = 0
 
 
@@ -155,7 +159,9 @@ def main():
         # load pruned model
         model = torch.load(args.pruned_model)
         # reinitialise weights
-        model.apply(_weights_init)
+        if not args.no_init_weights:
+            print("Reinitialise weights")
+            model.apply(_weights_init)
     else:
         model = models.__dict__[args.arch]()
 
